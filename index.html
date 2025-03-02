@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8">
+  <title>Module 14</title>
+  
+
+</head>
+<body>
+<!-- partial:index.partial.html -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OTU Bar Chart</title>
+  <script src="https://d3js.org/d3.v6.min.js"></script>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+
+<body>
+
+  <h3>Select an Individual:</h3>
+  <select id="dropdown"></select>
+
+  <div id="bar-chart"></div>
+
+  <script>
+    // Load the JSON data
+    const url = "https://static.bc-edx.com/data/dl-1-2/m14/lms/starter/samples.json";
+    d3.json(url).then(data => {
+      console.log("Data Loaded:", data);
+      // Extract necessary information
+      let samples = data.samples;
+      let dropdown = d3.select("#dropdown");
+      // Populate dropdown with sample IDs
+      samples.forEach(sample => {
+        dropdown.append("option")
+          .text(sample.id)
+          .attr("value", sample.id);
+      });
+      // Function to update the bar chart
+      function updateChart(selectedID) {
+        let sampleData = samples.find(sample => sample.id === selectedID);
+        let top10_values = sampleData.sample_values.slice(0, 10).reverse();
+        let top10_ids = sampleData.otu_ids.slice(0, 10).map(id => `OTU ${id}`).reverse();
+        let top10_labels = sampleData.otu_labels.slice(0, 10).reverse();
+        let trace = {
+          x: top10_values,
+          y: top10_ids,
+          text: top10_labels,
+          type: "bar",
+          orientation: "h"
+        };
+        let layout = {
+          title: `Top 10 OTUs for Sample ${selectedID}`,
+          xaxis: {
+            title: "Sample Values"
+          },
+          yaxis: {
+            title: "OTU IDs"
+          }
+        };
+        Plotly.newPlot("bar-chart", [trace], layout);
+      }
+      // Initialize chart with the first sample
+      updateChart(samples[0].id);
+      // Update chart on dropdown change
+      dropdown.on("change", function() {
+        let selectedID = d3.select(this).property("value");
+        updateChart(selectedID);
+      });
+    });
+  </script>
+
+</body>
+
+</html>
+<!-- partial -->
+  
+</body>
+</html>
