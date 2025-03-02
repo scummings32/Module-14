@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OTU Dashboard</title>
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            text-align: center;
+        }
+        #dashboard {
+            display: grid;
+            grid-template-columns: 1fr 3fr;
+            gap: 20px;
+            max-width: 1200px;
+            margin: auto;
+        }
+        #sidebar {
+            border: 1px solid #ccc;
+            padding: 15px;
+            background: #f8f8f8;
+            text-align: left;
+        }
+        #charts {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>OTU Analysis Dashboard</h2>
+
+    <label for="dropdown"><strong>Select a Sample:</strong></label>
+    <select id="dropdown"></select>
+
+    <div id="dashboard">
+        <!-- Sidebar for Metadata -->
+        <div id="sidebar">
+            <h3>Sample Metadata</h3>
+            <div id="sample-metadata"></div>
+        </div>
+
+        <!-- Charts Section -->
+        <div id="charts">
+            <div id="bubble-chart"></div>
+        </div>
+    </div>
+
+    <script>
+        // Load JSON data
+        const url = "https://static.bc-edx.com/data/dl-1-2/m14/lms/starter/samples.json";
+
+        d3.json(url).then(data => {
+            console.log("Data Loaded:", data);
+
+            let samples = data.samples;
+            let metadata = data.metadata;
+            let dropdown = d3.select("#dropdown");
+
+            // Populate dropdown with sample IDs
+            samples.forEach(sample => {
+                dropdown.append("option")
+                        .text(sample.id)
+                        .attr("value", sample.id);
+            });
+
+            // Function to update all plots
+            function updateDashboard(selectedID) {
+                updateChart(selectedID);
+                updateMetadata(selectedID);
+            }
+
+            // Update Bubble Chart
+            function updateChart(selectedID) {
+                let sampleData = samples.find(sample => sample.id === selectedID);
+
+                let trace = {
+                    x: sampleData.otu_ids,
+                    y: sampleData.sample_values,
+                    text: sampleData.otu_labels,
+                    mode: "markers",
+                    marker: {
+                        size: sampleData.sample_values,
+                        color: sampleData.otu_ids,
+                        colorscale: "Viridis"
+                    }
+                };
+
+                let layout = {
+                    title: `OTU Bubble Chart for Sample ${selectedID}`,
+                    xaxis: { title: "OTU IDs" },
+                    yaxis: { title: "Sample Values" },
+                    hovermode: "closest"
+                };
+
+                Plotly.newPlot("bubble-chart", [trace], layout);
+            }
+
+            // Update Metadata Panel
+            function updateMetadata(selectedID) {
+                let metadataPanel = d3.select("#sample-metadata");
+                let selectedMetadata = metadata.find(meta => meta.id == selectedID);
+
+                // Clear previous metadata
+                metadataPanel.html("");
+
+                // Loop through metadata and append key-value pairs
+                Object.entries(selectedMetadata).forEach(([key, value]) => {
+                    metadataPanel.append("p").text(`${key}: ${value}`);
+                });
+            }
+
+            // Initialize with the first sample
+            let initialID = samples[0].id;
+            updateDashboard(initialID);
+
+            // Update when dropdown selection changes
+            dropdown.on("change", function() {
+                let selectedID = d3.select(this).property("value");
+                updateDashboard(selectedID);
+            });
+        });
+    </script>
+
+</body>
+</html>
